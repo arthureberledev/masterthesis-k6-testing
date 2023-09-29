@@ -1,0 +1,14 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "constant-rate": "k6 run src/constant-rate.js",
+    "test": "k6 run script.js",
+    "test:cloud": "k6 cloud script.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
