@@ -1,54 +1,44 @@
+/**
+ * The shared-iterations executor shares iterations between the number of VUs. The test ends once k6 executes all iterations.
+ *
+ * Wann zu verwenden
+ * Dieser Executor ist geeignet, wenn eine bestimmte Anzahl von VUs eine feste Anzahl von Iterationen durchführen soll und die Anzahl der Iterationen pro VU unwichtig ist.
+ * Wenn die Zeit für die Durchführung einer bestimmten Anzahl von Testiterationen wichtig ist (time to complete), ist dieser Executor am besten geeignet.
+ *
+ * Ein Beispiel für einen Anwendungsfall sind schnelle Leistungstests im Build-Zyklus der Entwicklung.
+ * Wenn Entwickler Änderungen vornehmen, können sie den Test gegen den lokalen Code laufen lassen, um auf Leistungsrückschritte zu testen.
+ * Der Executor eignet sich daher gut für eine Shift-Links-Politik, bei der der Schwerpunkt auf Leistungstests zu Beginn des Entwicklungszyklus liegt, wenn die Kosten für eine Korrektur am geringsten sind.
+ */
+
 import { check, sleep } from "k6";
 import http from "k6/http";
 
-// const name = "AWS-SERVERLESS_STRESS-TEST";
-const name = "AWS-MONOLITHIC-LIGHTSAIL_STRESS-TEST";
+const lambda = {
+  BASE_URL: "https://09jx46779a.execute-api.eu-central-1.amazonaws.com",
+  name: "AWS-SERVERLESS_RAMPING-VUS",
+};
 
-// const BASE_URL = "https://192.168.0.91:3000";
-// const BASE_URL =
-//   "https://ec2-3-122-107-158.eu-central-1.compute.amazonaws.com:3000";
-// const BASE_URL = "https://aij2qt7277.execute-api.eu-central-1.amazonaws.com";
-const BASE_URL =
-  "https://ec2-18-184-157-162.eu-central-1.compute.amazonaws.com:3000";
+const ec2 = {
+  BASE_URL:
+    "https://ec2-18-184-157-162.eu-central-1.compute.amazonaws.com:3000",
+  name: "AWS-MONOLITHIC-M3m_RAMPING-VUS",
+};
+
+const { BASE_URL, name } = ec2;
 
 const PRODUCTS_ENDPOINT = "/products";
 const ORDERS_ENDPOINT = "/orders";
 const USERS_ENDPOINT = "/users";
 
-const headers = { "Content-Type": "application/json" };
+const executor = "ramping-vus";
 
-const CONSTANT_ARRIVAL_RATE = {
-  executor: "constant-arrival-rate",
-  rate: 1000, // Number of iterations to start during each timeUnit period.
-  timeUnit: "10m", // Period of time to apply the rate value.
-  preAllocatedVUs: 10,
-  maxVUs: 10, // Maximum number of VUs to allow during the test run.
-  startTime: "0s",
-  duration: "10m", // Total scenario duration (excluding gracefulStop).
-};
+// 1K Requests
+const iterations = 250;
+const maxDuration = "1m";
 
-// const stages = [
-//   // Start 100 iterations per `timeUnit` for the first minute.
-//   { target: 100, duration: "1m" },
-//   // Linearly ramp-up to starting 200 iterations per `timeUnit` over the following two minutes.
-//   { target: 200, duration: "2m" },
-//   // Continue starting 200 iterations per `timeUnit` for the following four minutes.
-//   { target: 200, duration: "4m" },
-//   // Linearly ramp-down to starting 20 iterations per `timeUnit` over the last two minutes.
-//   { target: 20, duration: "2m" },
-// ];
-
-// const executor = "ramping-arrival-rate";
-// const startRate = 0;
-// const timeUnit = "1s";
-// const preAllocatedVUs = 100;
-// const stages = [
-//   { target: 5, duration: "30s" }, // Warm-Up Phase
-//   { target: 20, duration: "4m" }, // Ramping-Up Phase
-//   { target: 50, duration: "5m" }, // Peak Load Phase
-//   { target: 20, duration: "2m" }, // Ramping-Down Phase
-//   { target: 5, duration: "1m" }, // Cool-Down Phase
-// ];
+// const vus = 100;
+// const iterations = 2500;
+// const maxDuration = "10m";
 
 export const options = {
   insecureSkipTLSVerify: true,
@@ -62,73 +52,43 @@ export const options = {
     },
   },
   scenarios: {
-    // getProducts: {
-    //   exec: "getProducts",
-    //   executor,
-    //   startVUs,
-    //   stages,
-    //   gracefulRampDown,
-    // },
-    // createProduct: {
-    //   exec: "getProducts",
-    //   executor,
-    //   startVUs,
-    //   stages,
-    //   gracefulRampDown,
-    // },
-    // updateProduct: {
-    //   exec: "updateProduct",
-    //   executor,
-    //   startVUs,
-    //   stages,
-    //   gracefulRampDown,
-    // },
-    // deleteProduct: {
-    //   exec: "deleteProduct",
-    //   executor,
-    //   startVUs,
-    //   stages,
-    //   gracefulRampDown,
-    // },
     getUsers: {
       exec: "getUsers",
       executor,
-      startRate,
-      timeUnit,
-      preAllocatedVUs,
-      stages,
+      vus,
+      iterations,
+      maxDuration,
     },
     createUser: {
       exec: "createUser",
       executor,
-      startRate,
-      timeUnit,
-      preAllocatedVUs,
-      stages,
+      vus,
+      iterations,
+      maxDuration,
     },
     updateUser: {
       exec: "updateUser",
       executor,
-      startRate,
-      timeUnit,
-      preAllocatedVUs,
-      stages,
+      vus,
+      iterations,
+      maxDuration,
     },
     deleteUser: {
       exec: "deleteUser",
       executor,
-      startRate,
-      timeUnit,
-      preAllocatedVUs,
-      stages,
+      vus,
+      iterations,
+      maxDuration,
     },
   },
 };
 
+const headers = { "Content-Type": "application/json" };
+
 export function getProducts() {
   const res = http.get(BASE_URL + PRODUCTS_ENDPOINT);
   check(res, { "status was 200": (r) => r.status == 200 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function createProduct() {
@@ -136,7 +96,7 @@ export function createProduct() {
   const payload = JSON.stringify({ name: "Test Product", price: "19.99" });
   const res = http.post(url, payload, { headers });
   check(res, { "status was 201": (r) => r.status == 201 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function updateProduct() {
@@ -144,19 +104,19 @@ export function updateProduct() {
   const payload = JSON.stringify({ name: "Updated Product", price: "29.99" });
   const res = http.put(url, payload, { headers });
   check(res, { "status was 200": (r) => r.status == 200 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function deleteProduct() {
   const res = http.del(BASE_URL + PRODUCTS_ENDPOINT + "/1");
   check(res, { "status was 204": (r) => r.status == 204 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function getOrders() {
   const res = http.get(BASE_URL + ORDERS_ENDPOINT);
   check(res, { "status was 200": (r) => r.status == 200 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function createOrder() {
@@ -164,7 +124,7 @@ export function createOrder() {
   const payload = JSON.stringify({ user_id: 1, product_id: 1, quantity: 2 });
   const res = http.post(url, payload, { headers });
   check(res, { "status was 201": (r) => r.status == 201 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function updateOrder() {
@@ -172,19 +132,19 @@ export function updateOrder() {
   const payload = JSON.stringify({ product_id: 2, quantity: 3 });
   const res = http.put(url, payload, { headers });
   check(res, { "status was 200": (r) => r.status == 200 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function deleteOrder() {
   const res = http.del(BASE_URL + ORDERS_ENDPOINT + "/1");
   check(res, { "status was 204": (r) => r.status == 204 });
-  sleep(1);
+  sleep(0.5);
 }
 
 export function getUsers() {
   const res = http.get(BASE_URL + USERS_ENDPOINT);
   check(res, { "status was 200": (r) => r.status == 200 });
-  // sleep(1);
+  sleep(0.5);
 }
 
 export function createUser() {
@@ -192,7 +152,7 @@ export function createUser() {
   const payload = JSON.stringify({ name: "Test User" });
   const res = http.post(url, payload, { headers });
   check(res, { "status was 201": (r) => r.status == 201 });
-  // sleep(1);
+  sleep(0.5);
 }
 
 export function updateUser() {
@@ -200,11 +160,11 @@ export function updateUser() {
   const payload = JSON.stringify({ name: "Updated User" });
   const res = http.put(url, payload, { headers });
   check(res, { "status was 200": (r) => r.status == 200 });
-  // sleep(1);
+  sleep(0.5);
 }
 
 export function deleteUser() {
   const res = http.del(BASE_URL + USERS_ENDPOINT + "/1");
   check(res, { "status was 204": (r) => r.status == 204 });
-  // sleep(1);
+  sleep(0.5);
 }

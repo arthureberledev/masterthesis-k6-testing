@@ -5,6 +5,9 @@
   "main": "index.js",
   "scripts": {
     "constant-rate": "k6 run src/constant-rate.js",
+    "constant-rate:cloud": "k6 cloud src/constant-rate.js",
+    "shared-iterations": "k6 run src/shared-iterations.js",
+    "shared-iterations:cloud": "k6 cloud src/shared-iterations.js",
     "test": "k6 run script.js",
     "test:cloud": "k6 cloud script.js"
   },
