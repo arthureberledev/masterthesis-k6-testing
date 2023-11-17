@@ -39,7 +39,7 @@ function createRandomString(length, charset = "") {
 }
 
 export default () => {
-  let url = "http://20.79.236.75:3000/users";
+  let url = "azurewebsites.net/api/users";
   let email = `${createRandomString(10)}@mail.com`;
 
   group("1. Create new user", () => {
@@ -48,10 +48,14 @@ export default () => {
       email: email,
     });
 
-    const response = http.post(url, payload, {
-      headers: { "Content-Type": "application/json" },
-      tags: { name: "Create" },
-    });
+    const response = http.post(
+      `https://mt-serverless-create-user.${url}`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { name: "Create" },
+      }
+    );
 
     const isSuccess = check(response, {
       "User created successfully": (r) => r.status === 201,
@@ -66,7 +70,7 @@ export default () => {
   });
 
   group("2. Get user", () => {
-    const response = http.get(url, {
+    const response = http.get(`https://mt-serverless-get-user.${url}`, {
       tags: { name: "Read" },
     });
 
@@ -84,10 +88,14 @@ export default () => {
   group("3. Update user", () => {
     const payload = JSON.stringify({ name: "Updated User" });
 
-    const response = http.patch(url, payload, {
-      headers: { "Content-Type": "application/json" },
-      tags: { name: "Update" },
-    });
+    const response = http.patch(
+      `https://mt-serverless-update-user.${url}`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { name: "Update" },
+      }
+    );
 
     const isSuccess = check(response, {
       "User updated successfully": () => response.status === 200,
@@ -101,16 +109,20 @@ export default () => {
   });
 
   group("4. Delete user", () => {
-    const response = http.del(url, null, {
-      tags: { name: "Delete" },
-    });
+    const response = http.del(
+      `https://mt-serverless-delete-user.${url}`,
+      null,
+      {
+        tags: { name: "Delete" },
+      }
+    );
 
     const isSuccess = check(response, {
       "User deleted successfully": () => response.status === 204,
     });
 
     if (!isSuccess) {
-      console.log(`Unable to delete user: ${response.status} ${response.body}`);
+      console.log(`Unable to delete user: ${response.status}`);
       return;
     }
   });
